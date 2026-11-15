@@ -58,6 +58,7 @@ import { startEditTargets } from "./editTargets";
 import { startNotificationResponses } from "../../browser/src/state/app/notificationResponses";
 import { inputRegions, startShellAbove } from "./shellAbove";
 import { InWindowPlayer } from "./InWindowPlayer";
+import { startLinuxUpdates } from "./linuxUpdates";
 import { startPipPlayer } from "./pipPlayer";
 import { startLinuxShortcuts } from "./shortcutsRuntime";
 import { linuxWindowMenu, TrafficLights } from "./TrafficLights";
@@ -147,6 +148,7 @@ async function start() {
     startLinuxSync({ host: ardiaHost, candidate: true, locks: navigator.locks });
     if (capabilities.cliControl && !ardiaHost.bootstrap.privateWindow) afterFirstWindow(startAutomation);
     if (capabilities.userScripts && !ardiaHost.bootstrap.privateWindow) afterFirstWindow(() => leadUserScripts({ locks: navigator.locks, start: startUserScripts }));
+    startLinuxUpdates(ardiaHost, navigator.locks);
     startLinuxAppServices({
       host: ardiaHost,
       windowId,

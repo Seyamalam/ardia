@@ -3,6 +3,9 @@ import { linuxCapabilities, unavailableError } from "./hostCapabilities.ts";
 import { openMailLink } from "./linkShare.ts";
 import { linuxIntroMusic } from "./introMusic.ts";
 import { noteIntroMusicFailed } from "../../browser/src/state/telemetry/introCounts.ts";
+import { UPDATE_METHODS, updatesAvailable } from "./hostUpdates.ts";
+
+const UPDATER_METHODS: ReadonlySet<string> = new Set(UPDATE_METHODS);
 
 const INTRO_MUSIC = new Set(["playIntroMusic", "setIntroMusicMuted", "stopIntroMusic"]);
 const introMusicPlayers = new WeakMap<ArdiaHost, ReturnType<typeof linuxIntroMusic>>();
@@ -15,6 +18,9 @@ const introMusicFor = (host: ArdiaHost) => {
 export function linuxModuleMethod(host: ArdiaHost, name: string, method: string): ((...args: unknown[]) => Promise<unknown>) | undefined {
   if (name === "ArdiaSystem") return linuxSystemMethod(host, method);
   if (name !== "ArdiaApp" || hostSupports(`${name}.${method}`, host)) return undefined;
+  if (UPDATER_METHODS.has(method) && updatesAvailable(host)) {
+    return (...args) => import("./linuxUpdates.ts").then(({ linuxUpdaterFor }) => (linuxUpdaterFor(host).methods[method as (typeof UPDATE_METHODS)[number]] as (...args: unknown[]) => Promise<unknown>)(...args));
+  }
   if (INTRO_MUSIC.has(method)) return introMusicFor(host)[method as "playIntroMusic" | "setIntroMusicMuted" | "stopIntroMusic"] as (...args: unknown[]) => Promise<unknown>;
   if (method === "openExternalURL") return (url) => Promise.resolve(typeof url === "string" && openMailLink(url));
   return undefined;
