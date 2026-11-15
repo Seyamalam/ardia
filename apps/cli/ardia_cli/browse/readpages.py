@@ -604,7 +604,7 @@ async def extract_filled(page, selector: str | None, timeout: float) -> dict:
         return got
     waited = False
     stale = False
-    while thin(got, selector) and loop.time() + THIN_POLL < deadline:
+    while (stale or thin(got, selector) or moved(page, got)) and loop.time() + THIN_POLL < deadline:
         waited = True
         await asyncio.sleep(THIN_POLL)
         try:
@@ -617,6 +617,7 @@ async def extract_filled(page, selector: str | None, timeout: float) -> dict:
             await settle(page, min(deadline, loop.time() + SETTLE_LIMIT))
     if stale or moved(page, got):
         command_metrics.flag("read_reread_after_navigation", True)
+        await settle(page, loop.time() + SETTLE_LIMIT)
         got = await page.call(EXTRACT, selector, frame=page.main_frame, read=True)
     if waited:
         command_metrics.flag("read_waited_for_content", True)

@@ -153,6 +153,26 @@ class RedirectMidRead(unittest.TestCase):
         self.assertIn("the second document", record["text"])
         self.assertEqual(record["finalUrl"], "http://s/second")
 
+    def test_a_still_loading_destination_gets_the_remaining_poll(self):
+        class ShellPage(self.RedirectingPage):
+            async def call(self, function, *args, frame=None, read=False, **kwargs):
+                if not args:
+                    return "text/html" if "contentType" in function else ("complete", "7:7", False)
+                self.extracts += 1
+                if self.extracts == 1:
+                    got = {"title": "First", "url": "http://s/first", "text": "the first document " * 20, "matched": 1, "status": 200}
+                    self.url = "http://s/second"
+                    return got
+                if self.extracts == 2:
+                    return {"title": "", "url": "http://s/second", "text": "Loading…", "matched": 1, "status": 200}
+                return {"title": "Second", "url": "http://s/second", "text": "the second document " * 20, "matched": 1, "status": 200}
+
+        record = self.read(ShellPage())
+        self.assertNotIn("error", record)
+        self.assertEqual(record["title"], "Second")
+        self.assertIn("the second document", record["text"])
+        self.assertEqual(record["finalUrl"], "http://s/second")
+
 
 class Urls(unittest.TestCase):
     def test_arguments_and_stdin_lines_dedupe_in_order(self):
