@@ -906,6 +906,7 @@ std::string MimeType(std::string_view path) {
   if (ext == ".woff") return "font/woff";
   if (ext == ".woff2") return "font/woff2";
   if (ext == ".ttf") return "font/ttf";
+  if (ext == ".wav") return "audio/wav";
   return {};
 }
 
@@ -2466,6 +2467,7 @@ class ShellDataSource : public content::URLDataSource {
       case Directive::StyleSrc: return "style-src 'self' 'unsafe-inline';";
       case Directive::ImgSrc: return "img-src 'self' data: blob:;";
       case Directive::FontSrc: return "font-src 'self' data:;";
+      case Directive::MediaSrc: return "media-src 'self';";
       case Directive::ConnectSrc: return "connect-src 'none';";
       case Directive::FrameSrc: return "frame-src 'none';";
       case Directive::ChildSrc: return "child-src 'none';";

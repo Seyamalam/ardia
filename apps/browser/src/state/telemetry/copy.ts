@@ -223,7 +223,7 @@ export const LOCAL_COPY = {
 
 const ADDED_ITEMS = {
   Usage: [
-    "How many times the first-launch intro was shown, how many of those started with its music muted, how many were skipped and how many played to the end, and on Windows how many showed the moving meadow, the still picture, or the still picture after the meadow failed, and the time the meadow took to draw its first frame, rounded to a tenth of a second, summed up once an hour",
+    "How many times the first-launch intro was shown, how many of those started with its music muted, how many were skipped and how many played to the end, and on Windows how many showed the moving meadow, the still picture, or the still picture after the meadow failed, and the time the meadow took to draw its first frame, rounded to a tenth of a second, and on Linux how many times the intro's music couldn't play, summed up once an hour",
     "On Windows, how many animations ran and how many of their frames came late, summed up once an hour",
     "On Windows, how many links Ardia opened that it was started with while it wasn't running, summed up once an hour. Never which links or which app",
     "How many times you asked to make Ardia your default browser (on Windows, how many times that opened Windows Settings), and whether Ardia was your default browser when it started, summed up once an hour",
