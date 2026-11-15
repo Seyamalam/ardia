@@ -104,9 +104,12 @@ phones a build that isn't a release says Dev.
   test). Nothing distributes it yet: that needs a Play Console account and an upload key.
 - **CLI.** It follows the app: the app installs the CLI of its own version, with the digest pinned in its bundle
   (`docs/cli.md`), so a Nightly Mac runs the nightly CLI.
-- **Windows.** Joins when the Windows app is on main. Its updater reads one feed today; it needs a feed per channel
-  (the stable one on the latest stable release, the nightly one on the `nightly` prerelease, as the Mac's DMG links do)
-  and the same Settings switch.
+- **Windows.** Every release, nightly or stable, builds it in the Release workflow's `windows` job, attaches
+  `Ardia-<version>-windows-<cpu>-setup.exe` for x64 and arm64, and refreshes the one feed its updater reads, on the
+  `windows-alpha` prerelease (`docs/windows.md` › Releases). So an installed Windows app takes nightlies and stables
+  alike; a feed per channel (the stable one on the latest stable release, the nightly one on the `nightly`
+  prerelease, as the Mac's DMG links do) and the same Settings switch are still to come. A failed `windows` job ships
+  the release without Windows; never re-run the release's failed jobs for it.
 
 ## Source and licenses
 

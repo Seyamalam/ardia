@@ -936,13 +936,18 @@ Swift core wrote (`fixtures/windows-interop/mac`), and the self-check opens that
 
 ## Updates
 
-- The Windows alpha is the GitHub prerelease `windows-alpha`: `Ardia-Setup-x64.exe`, `Ardia-Setup-arm64.exe`, the
+- The updates live on the GitHub prerelease `windows-alpha`: `Ardia-Setup-x64.exe`, `Ardia-Setup-arm64.exe`, the
   feed `windows-update.json` (version, build, and per CPU the installer's address, SHA-256 and size) and the
-  engine's source. `scripts/windows/publish-alpha.sh <run id>` publishes one green Windows workflow run there; the
-  feed goes up last. It keeps the installers of the build before, so an update the app already offered still downloads,
-  and removes older ones.
-- A build knows what it is from `Ardia.build.json` beside `Ardia.exe` (`assemble.ps1 -Build`, the workflow's run
-  number). `ArdiaApp.systemInfo` takes its version and build from that file, since the library has no version
+  engine's source. `scripts/windows/publish-alpha.sh` puts one build there, the feed last. It keeps the installers of
+  the build before, so an update the app already offered still downloads, and removes older ones. It refuses a build
+  at or below the live feed's, since no installed app would take it.
+- Every release refreshes it (Releases, below), so installed Windows apps update to each nightly and stable.
+  `publish-alpha.sh <run id>` still publishes one green Windows workflow run there as an alpha between releases.
+- A build knows what it is from `Ardia.build.json` beside `Ardia.exe` (`assemble.ps1 -Version -Build`). The build
+  number is the number of commits in the built commit's history (`git rev-list --count`, the workflow's `identity`
+  job), so it grows with `main` and a release outranks every build before it, CI's included; builds before this rule
+  were numbered by the run (up to about 670). The Windows workflow puts the same file beside the installer in its
+  `Ardia-Setup-<cpu>` artifact, which is where `publish-alpha.sh` reads a build's version and number. `ArdiaApp.systemInfo` takes its version and build from that file, since the library has no version
   resource, so telemetry, About and problem reports name the build; a folder build without it says 0.0.0, build 0. Only an installed build with that file updates: Settings › General › Updates shows "not set up" for a
   folder build.
 - `packages/expo-windows/src/updater` is the app's `ArdiaUpdater` on Windows. It reads the feed, offers a higher
@@ -955,6 +960,38 @@ Swift core wrote (`fixtures/windows-interop/mac`), and the self-check opens that
   after hashing it again while holding it open. The installer runs silently, closes what is left of the app and
   opens it again (`/relaunch=1`). Nothing is signed yet, so what stands behind an update is GitHub's HTTPS and the
   release's write access.
+
+## Releases
+
+The Release workflow (`.github/workflows/release.yml`, dispatched by the `release` skill) builds Windows next to the
+Mac, for every nightly and stable:
+
+1. Its `windows` job calls `windows.yml` with the release's version, at the release's commit: the same build, pinned
+   engine (`scripts/windows/engine/prebuilt.json`), launch, tour and installer checks as CI, for x64 and arm64.
+   `release-files.ps1` names each tested installer `Ardia-<version>-windows-<cpu>-setup.exe` with its `.sha256`, and
+   the job leaves them with `Ardia.build.json` in the artifacts `windows-x64` and `windows-arm64`.
+2. `publish` attaches both installers and their `.sha256` files to `v<version>` (`publish.sh` checks the hashes and
+   that the build is this version). A dry run checks the same and attaches nothing.
+3. `windows-update`, after `publish`, runs `publish-alpha.sh --installers` on those files: a real run puts them on
+   `windows-alpha` and points the feed at them, so installed Windows apps offer the release; a dry run packs the feed
+   and source and prints what it would upload.
+
+A Windows failure never holds back the Mac release: `publish` warns that Windows was skipped, and the release ships
+without the installers and without refreshing the feed. Don't re-run the Release run's failed jobs for it: that runs
+`publish` again, which can't create a release that exists. When the cause is outside the code (a runner, a flaky
+check, an engine release the token can't read), build the release's commit on its own and add the result:
+
+```bash
+gh workflow run windows.yml -R ardia-browser/ardia --ref v<version> -f version=<version>
+gh run download <run id> -R ardia-browser/ardia -p 'windows-*' -D dist/<version>/windows
+gh release upload v<version> -R ardia-browser/ardia dist/<version>/windows/Ardia-<version>-windows-*-setup.exe*
+scripts/windows/publish-alpha.sh --installers dist/<version>/windows --commit v<version>
+```
+
+When the cause is in the code (a stale engine pin needs a new engine release and `prebuilt.json`), fix it on `main`;
+Windows skips this version and ships with the next release. When only `windows-update` failed, the installers are on
+the release already: re-run that job alone (its re-run touches nothing else), or run the last line above on its
+`windows-*` artifacts.
 
 ## Test instances
 
@@ -1130,7 +1167,6 @@ Engine work (#1425): the walk found nothing new missing beyond what is already l
 Decisions for Shivam:
 - the calendar source on Windows (#1521);
 - Translate (#1520);
-- publishing a `windows-alpha` release, so Check for Updates has something to find (#1517);
 - signing, or a per-machine install (#1659).
 
 With the engine and owner items set aside, the app side has not reached parity yet: items 1 to 4, 9 and 10 are bugs a
@@ -1150,5 +1186,5 @@ only where the engine, Windows itself or a decision stands in the way.
    gestures. Import from another browser is done for bookmarks, history, open tabs, favicons, Chromium passwords and
    cookies, and HTML and CSV files; what is left is listed under Import from another browser.
 6. An installer exists (`scripts/windows/make-installer.ps1`, Inno Setup, per user, no admin prompt; CI builds
-   `Ardia-Setup-<cpu>.exe` and installs and uninstalls it), and the app updates itself from the Windows alpha
-   (Updates, below). Left: signing both.
+   `Ardia-Setup-<cpu>.exe` and installs and uninstalls it), every release ships them and refreshes the feed, and the
+   app updates itself from it (Updates, below). Left: signing both.

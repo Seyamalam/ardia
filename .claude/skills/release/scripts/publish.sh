@@ -52,6 +52,26 @@ if [ -d "$linux" ]; then
 else
   echo "note: no $linux: the release ships without the Linux tarball"
 fi
+windows="$dist/windows"
+if [ -d "$windows" ]; then
+  windows_assets=()
+  for cpu in x64 arm64; do
+    windows_setup="Ardia-$version-windows-$cpu-setup.exe"
+    for file in "$windows/$windows_setup" "$windows/$windows_setup.sha256"; do
+      [ -f "$file" ] || die "$windows has no $(basename "$file") (the Release workflow's windows job makes them, or remove $windows to publish without Windows)"
+    done
+    windows_assets+=("$windows_setup")
+  done
+  stamped_version="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' "$windows/Ardia.build.json" 2>/dev/null)" \
+    || die "$windows has no readable Ardia.build.json"
+  [ "$stamped_version" = "$version" ] || die "the Windows installers in $windows are Ardia $stamped_version, not $version"
+  (cd "$windows" && for file in "${windows_assets[@]}"; do shasum -a 256 -c --quiet "$file.sha256" || exit 1; done) \
+    || die "the Windows installers in $windows don't match their .sha256 files"
+  for file in "${windows_assets[@]}"; do assets+=("$windows/$file" "$windows/$file.sha256"); done
+  echo "PASS  the Windows installers join the release"
+else
+  echo "note: no $windows: the release ships without the Windows installers"
+fi
 item_channel="$(appcast channel "$feed" "$version")"
 [ "$item_channel" = "$channel" ] || die "$version's item in $feed is on the $item_channel channel, not $channel"
 [ -f "$dist/release-notes.md" ] || die "no $dist/release-notes.md"

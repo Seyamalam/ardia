@@ -74,7 +74,7 @@ test("a test instance seals its sync key under its own DPAPI purpose, so it can'
 
 test("an app folder the Windows workflow uploads has lost its test-build marker, with no harness run after that", () => {
   const workflow = readFileSync(new URL("../../../../.github/workflows/windows.yml", import.meta.url), "utf8");
-  const jobs = workflow.split(/\r?\n  (?=[a-z0-9-]+:\r?\n    runs-on:)/).slice(1);
+  const jobs = workflow.slice(workflow.indexOf("\njobs:")).split(/\r?\n  (?=[a-z0-9-]+:\r?\n)/).slice(1).filter((job) => /\n    runs-on: windows/.test(job));
   assert.equal(jobs.length, 2);
   for (const job of jobs) {
     const strip = job.indexOf('-Filter "Ardia.test-build"');
