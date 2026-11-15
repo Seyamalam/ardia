@@ -80,6 +80,13 @@ int main() {
         self.assertIn('case Directive::MediaSrc: return "media-src \'self\';";', host)
         self.assertIn('if (ext == ".wav") return "audio/wav";', host)
 
+    def test_the_bootstrap_says_why_a_launch_runs_without_the_sandbox_only_when_it_does(self):
+        host = (LINUX / 'ac_linux_host.cc').read_text()
+        self.assertIn('command->HasSwitch(sandbox::policy::switches::kNoSandbox)', host)
+        self.assertIn('GetSwitchValueASCII("ardia-sandbox-decision")', host)
+        self.assertIn('bootstrap.Set("sandboxDecision"', host)
+        self.assertIn('"//sandbox/policy"', (LINUX / 'BUILD.gn').read_text())
+
 
 if __name__ == '__main__':
     unittest.main()

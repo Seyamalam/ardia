@@ -59,6 +59,7 @@ import { startNotificationResponses } from "../../browser/src/state/app/notifica
 import { inputRegions, startShellAbove } from "./shellAbove";
 import { InWindowPlayer } from "./InWindowPlayer";
 import { startLinuxUpdates } from "./linuxUpdates";
+import { noticeUnsandboxedLaunch } from "./sandboxNotice";
 import { startPipPlayer } from "./pipPlayer";
 import { startLinuxShortcuts } from "./shortcutsRuntime";
 import { linuxWindowMenu, TrafficLights } from "./TrafficLights";
@@ -149,7 +150,7 @@ async function start() {
     if (capabilities.cliControl && !ardiaHost.bootstrap.privateWindow) afterFirstWindow(startAutomation);
     if (capabilities.userScripts && !ardiaHost.bootstrap.privateWindow) afterFirstWindow(() => leadUserScripts({ locks: navigator.locks, start: startUserScripts }));
     startLinuxUpdates(ardiaHost, navigator.locks);
-    startLinuxAppServices({
+    const services = startLinuxAppServices({
       host: ardiaHost,
       windowId,
       savedSession: !!saved,
@@ -157,6 +158,7 @@ async function start() {
       locks: navigator.locks,
       marks: sessionStorage,
     });
+    void noticeUnsandboxedLaunch(ardiaHost, windowId, services.launch);
   }
   createRoot(document.getElementById("root")!, { onUncaughtError: (error) => { reportUncaughtRender(error); console.error("[ardia linux] crashed", error); } }).render(
     <div className={`ardia-desktop host ardia-linux${utility ? " utility" : ""}`} data-ardia-linux-window={windowId}>

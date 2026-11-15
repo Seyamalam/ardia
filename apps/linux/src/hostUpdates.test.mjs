@@ -143,3 +143,18 @@ test("the switch refresh through the native host updates the cached switches", a
   const host = { bootstrap: { capabilities: [] }, invoke: async () => ({ status: 200, body: JSON.stringify({ version: 1, switches: { newTabPrewarm: false } }) }) };
   assert.equal(await refreshSwitches(linuxSwitchesFetch(host, async () => { throw new Error("the shell can't fetch"); })), "updated");
 });
+
+test("a launch the launcher ran without the sandbox says why once, in the window that ran the launch, and counts it", async () => {
+  const { noticeUnsandboxedLaunch, sandboxNotice } = await import("./sandboxNotice.ts");
+  assert.equal(sandboxNotice(undefined), null);
+  const reason = "AppArmor restricts unprivileged user namespaces and no AppArmor profile grants them to /tmp/.mount_x/lib/ardia/chrome, and an AppImage can't carry Chromium's setuid sandbox helper";
+  assert.match(sandboxNotice(reason).message, /^AppArmor restricts .* helper\. Install Ardia's \.deb/);
+  takeUpdateCounts();
+  const shown = [];
+  const host = { bootstrap: { sandboxDecision: reason } };
+  assert.equal(await noticeUnsandboxedLaunch(host, "w1", Promise.resolve("alreadyDone"), (...args) => shown.push(args)), false);
+  assert.equal(await noticeUnsandboxedLaunch({ bootstrap: {} }, "w1", Promise.resolve("ran"), (...args) => shown.push(args)), false);
+  assert.equal(await noticeUnsandboxedLaunch(host, "w1", Promise.resolve("ran"), (...args) => shown.push(args)), true);
+  assert.deepEqual(shown.map(([windowId, title]) => [windowId, title]), [["w1", "Ardia is running without Chromium's sandbox"]]);
+  assert.equal(takeUpdateCounts().launches_without_sandbox, 1);
+});

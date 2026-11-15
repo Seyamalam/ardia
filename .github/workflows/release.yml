@@ -354,6 +354,10 @@ jobs:
           path: |
             ${{ runner.temp }}/linux/Ardia-${{ inputs.version }}-linux-x64.tar.xz
             ${{ runner.temp }}/linux/Ardia-${{ inputs.version }}-linux-x64.tar.xz.sha256
+            ${{ runner.temp }}/linux/Ardia-${{ inputs.version }}-linux-x64.deb
+            ${{ runner.temp }}/linux/Ardia-${{ inputs.version }}-linux-x64.deb.sha256
+            ${{ runner.temp }}/linux/Ardia-${{ inputs.version }}-linux-x64.AppImage
+            ${{ runner.temp }}/linux/Ardia-${{ inputs.version }}-linux-x64.AppImage.sha256
             ${{ runner.temp }}/linux/ardia-cli-${{ inputs.version }}-linux-x64.tar.gz
             ${{ runner.temp }}/linux/ardia-cli-${{ inputs.version }}-linux-x64.tar.gz.sha256
             ${{ runner.temp }}/linux/provenance.txt
@@ -367,6 +371,8 @@ jobs:
           path: |
             ${{ runner.temp }}/linux/*.log
             ${{ runner.temp }}/linux/smoke
+            ${{ runner.temp }}/linux/smoke-deb
+            ${{ runner.temp }}/linux/smoke-appimage
           if-no-files-found: ignore
           retention-days: 14
 

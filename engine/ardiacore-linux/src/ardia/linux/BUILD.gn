@@ -425,6 +425,7 @@ source_set("linux") {
     "//net",
     "//pdf:buildflags",
     "//printing/buildflags",
+    "//sandbox/policy",
     "//services/media_session/public/cpp",
     "//services/media_session/public/mojom",
     "//services/network/public/cpp",

@@ -216,6 +216,7 @@
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "net/base/net_errors.h"
 #include "net/http/http_response_headers.h"
+#include "sandbox/policy/switches.h"
 #include "services/network/public/mojom/content_security_policy.mojom.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
 #include "third_party/skia/include/core/SkBitmap.h"
@@ -3228,6 +3229,11 @@ base::DictValue ShellHostView::Bootstrap() const {
   bootstrap.Set("pageProfile", page_profile_);
   if (!private_window_.empty()) bootstrap.Set("privateWindow", private_window_.Clone());
   bootstrap.Set("windowKind", WindowKind());
+  if (const base::CommandLine* command = base::CommandLine::ForCurrentProcess();
+      command->HasSwitch(sandbox::policy::switches::kNoSandbox)) {
+    const std::string decision = command->GetSwitchValueASCII("ardia-sandbox-decision");
+    bootstrap.Set("sandboxDecision", decision.empty() ? "--no-sandbox was passed to chrome directly" : decision.substr(0, 400));
+  }
   if (small_ && !small_window_.empty()) bootstrap.Set("smallWindow", small_window_.Clone());
   if (ChromeMade()) bootstrap.Set("chromeMade", true);
   if (base::ListValue adopt = UnclaimedTabsForShell(); !adopt.empty()) bootstrap.Set("adoptTabs", std::move(adopt));
