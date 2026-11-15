@@ -101,6 +101,7 @@
 #include "ardia/linux/ac_linux_system.h"
 #include "ardia/linux/ac_linux_telemetry.h"
 #include "ardia/linux/ac_linux_telemetry_policy.h"
+#include "ardia/linux/ac_linux_updates.h"
 #include "ardia/linux/ac_linux_typeahead_input.h"
 #include "ardia/linux/host_bootstrap.h"
 #include "base/auto_reset.h"
@@ -3142,6 +3143,8 @@ base::DictValue ShellHostView::Bootstrap() const {
       .Append("ArdiaShell.cancelDialog").Append("ArdiaShell.beginWindowCloseDrain")
       .Append("ArdiaSearch.suggest").Append("ArdiaSearch.cancelSuggest")
       .Append("ArdiaTelemetry.post")
+      .Append("ArdiaShell.fetchKillSwitches")
+      .Append("ArdiaUpdates.releases")
       .Append("ArdiaShell.launchSteps")
       .Append("ArdiaShell.completeLaunchStep")
       .Append("ArdiaShell.typeaheadReady")
@@ -6540,6 +6543,15 @@ void ShellHostView::Invoke(
           if (!body) return std::move(done).Run(false, base::Value(base::DictValue()
               .Set("code", "ERR_SUGGEST").Set("message", "Search suggestions are unavailable")));
           std::move(done).Run(true, base::Value(base::DictValue().Set("body", std::move(*body))));
+        },
+        std::move(done)));
+  }
+  if (const auto source = ardia::linux_updates_policy::SourceForMethod(method)) {
+    if (!values.empty())
+      return std::move(done).Run(false, base::Value("This call takes no arguments"));
+    return ardia::linux_updates::Fetch(*source, base::BindOnce(
+        [](base::OnceCallback<void(bool, base::Value)> done, int status, std::string body) {
+          std::move(done).Run(true, base::Value(base::DictValue().Set("status", status).Set("body", std::move(body))));
         },
         std::move(done)));
   }
